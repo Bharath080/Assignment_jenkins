@@ -13,7 +13,7 @@ pipeline {
       parallel {
         stage('Build Docker Image') {
           steps {
-            sh 'mkdir vote && cd vote && docker build . -t dockerfile'
+            sh 'mkdir vote && cd vote && docker build . -t "Dockerfile"'
             sh 'docker push'
           }
         }
