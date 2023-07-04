@@ -35,8 +35,8 @@ pipeline {
     stage('Cleanup the docker image') {
       steps {
         script {
-          sh 'docker rmi public.ecr.aws/r5v8g0t2/testecr:${BUILD_NUMBER}'
-          sh 'docker rmi testecr:${BUILD_NUMBER}'
+          sh 'docker rmi 058362172342.dkr.ecr.us-east-1.amazonaws.com/privaterep:${BUILD_NUMBER}'
+          sh 'docker rmi privaterep:${BUILD_NUMBER}'
         }
       }
     }
