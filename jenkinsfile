@@ -23,10 +23,10 @@ pipeline {
       steps {
         script {     
           sh '''
-          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/r5v8g0t2
-          docker build -t testecr:${BUILD_NUMBER} .
-          docker tag testecr:latest public.ecr.aws/r5v8g0t2/testecr:latest:${BUILD_NUMBER}
-          docker push public.ecr.aws/r5v8g0t2/testecr:latest:${BUILD_NUMBER}
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 058362172342.dkr.ecr.us-east-1.amazonaws.com
+          docker build -t privaterep:${BUILD_NUMBER} .
+          docker tag privaterep:latest 058362172342.dkr.ecr.us-east-1.amazonaws.com/privaterep:${BUILD_NUMBER}
+          docker push 058362172342.dkr.ecr.us-east-1.amazonaws.com/privaterep:${BUILD_NUMBER}
           '''
         }
       }
@@ -45,9 +45,9 @@ pipeline {
       steps {
         script {
           sh '''
-          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/r5v8g0t2
-          docker pull public.ecr.aws/r5v8g0t2/testecr:${BUILD_NUMBER}
-          docker run -d -p 8080:8081 public.ecr.aws/r5v8g0t2/testecr:${BUILD_NUMBER}
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 058362172342.dkr.ecr.us-east-1.amazonaws.com
+          docker pull 058362172342.dkr.ecr.us-east-1.amazonaws.com/privaterep:${BUILD_NUMBER}
+          docker run -d -p 8080:8081 058362172342.dkr.ecr.us-east-1.amazonaws.com/privaterep:${BUILD_NUMBER}
           '''
         }
       }
