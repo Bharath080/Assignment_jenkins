@@ -2,54 +2,58 @@ pipeline {
   agent {
     label 'worker'
   }
+   
   stages {
     stage('Git Checkout') {
       steps {
-        checkout scm
+        checkout([$class: 'GitSCM',
+                  branches: [[name: '*/main']],
+                  userRemoteConfigs: [[url: 'https://github.com/vigi06/project-c42.git']]])
       }
     }
-
-    stage('Build Docker Image') {
-      parallel {
-        stage('Build Docker Image') {
-          steps {
-            sh 'aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/r5v8g0t2
-            sh 'docker build -t testecr .'
-            sh 'docker tag testecr:latest public.ecr.aws/r5v8g0t2/testecr:latest'
-            sh 'docker push public.ecr.aws/r5v8g0t2/testecr:latest'
-          }
-        }
-
-        stage('Unit Testing') {
-          steps {
-            sh 'echo Run the Test Cases'
-          }
-        }
-
-      }
-    }
-    }
-
-    stage('Adding New Stage') {
+    
+     stage('Stopping the container') {
       steps {
-        sh 'echo adding a new stage'
+        script {
+          sh 'docker kill $(docker ps -q)'
+        }
+      }
+    }
+    stage('Build Docker Image') {
+      steps {
+        script {     
+          sh '''
+          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/r5v8g0t2
+          docker build -t testecr:${BUILD_NUMBER} .
+          docker tag testecr:latest public.ecr.aws/r5v8g0t2/testecr:latest:${BUILD_NUMBER}
+          docker push public.ecr.aws/r5v8g0t2/testecr:latest:${BUILD_NUMBER}
+          '''
+        }
       }
     }
 
-  }
-  environment {
-    AWS_DEFAULT_REGION = 'us-east-1'
-    SERVICE_NAME = 'vote'
-    TASK_FAMILY = 'vote-fargate-v1'
-    ECS_CLUSTER = 'vote-application'
-  }
-  post {
-    always {
-      deleteDir()
-      sh 'sudo docker rmi dockerfile'
+    stage('Cleanup the docker image') {
+      steps {
+        script {
+          sh 'docker rmi public.ecr.aws/r5v8g0t2/testecr:${BUILD_NUMBER}'
+          sh 'docker rmi testecr:${BUILD_NUMBER}'
+        }
+      }
     }
 
+    stage('Deploy the application') {
+      steps {
+        script {
+          sh '''
+          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/r5v8g0t2
+          docker pull public.ecr.aws/r5v8g0t2/testecr:${BUILD_NUMBER}
+          docker run -d -p 8080:8081 public.ecr.aws/r5v8g0t2/testecr:${BUILD_NUMBER}
+          '''
+        }
+      }
+    }
   }
+
   options {
     buildDiscarder(logRotator(numToKeepStr: '10'))
     disableConcurrentBuilds()
